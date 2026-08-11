@@ -1,9 +1,10 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const Person = require('./models/person')
 
 const app = express()
-
 
 app.use(express.static('dist'))
 app.use(express.json())
@@ -12,7 +13,7 @@ app.use(cors())
 morgan.token('post', (res) => JSON.stringify(res.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post'))
 
-
+/*
 let persons = [
     { 
       "id": "1",
@@ -34,10 +35,12 @@ let persons = [
       "name": "Mary Poppendieck", 
       "number": "39-23-6423122"
     }
-]
+]*/
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then(result => {
+  response.json(result)
+})
 })
 
 app.get('/info', (request, response) => {
@@ -47,18 +50,25 @@ app.get('/info', (request, response) => {
     response.send(`Phonebook has info for ${length} people <br><br>${date}`)
 })
 
-
 app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const person = persons.find(note => note.id === id)
   
+  if (request.params.id.length < 24) {
+    response.status(400).end()
+    return
+  }
+
+  Person.findById(request.params.id).then(person => {
   if (person) {
     response.json(person)
   } else {
     response.status(404).end()
   }
 })
-
+  .catch(error => {
+    console.log(error)
+    response.status(500).end()
+  })
+})
 
 app.delete('/api/persons/:id', (request, response) => {
   const id = request.params.id
@@ -66,7 +76,7 @@ app.delete('/api/persons/:id', (request, response) => {
 
   response.status(204).end()
 })
-
+/*
 const generateId = () => {
     const id = Math.floor(Math.random() * 9000);
     return id
@@ -92,7 +102,7 @@ const checkNumber = (number) => {
         }
     });
     return result
-}
+}*/
 
 app.post('/api/persons', (request, response) => {
   const body = request.body
@@ -102,7 +112,7 @@ app.post('/api/persons', (request, response) => {
       error: 'name and / or number is missing' 
     })
   }
-
+/*
   if (checkName(body.name)) {
     return response.status(400).json({ 
       error: 'name must be unique' 
@@ -113,21 +123,19 @@ app.post('/api/persons', (request, response) => {
     return response.status(400).json({ 
       error: 'number must be unique' 
     })
-  }
+  }*/
   
-  const person = {
-    id: generateId().toString(),
+  const person = new Person({
     name: body.name,
     number: body.number
-  }
+  })
 
-  persons = persons.concat(person)
-
-  response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
-  
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
