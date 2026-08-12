@@ -6,6 +6,16 @@ const Person = require('./models/person')
 
 const app = express()
 
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(error)
+}
+
 app.use(express.static('dist'))
 app.use(express.json())
 app.use(cors())
@@ -13,18 +23,20 @@ app.use(cors())
 morgan.token('post', (res) => JSON.stringify(res.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post'))
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
   Person.find({}).then(result => {
   response.json(result)
 })
+.catch(error => next(error))
 })
 
+/*
 app.get('/info', (request, response) => {
     var length = persons.length
     var date = new Date()
     date[Symbol.toPrimitive]("string");
     response.send(`Phonebook has info for ${length} people <br><br>${date}`)
-})
+})*/
 
 app.get('/api/persons/:id', (request, response, next) => {
 
@@ -44,7 +56,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
     .then(result => {
       response.status(204).end()
     })
-    .catch(error => next.apply(error))
+    .catch(error => next(error))
 })
 /*
 const checkName = (name) => {
@@ -69,11 +81,11 @@ const checkNumber = (number) => {
     return result
 }*/
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
-  
-  if (!body.name || !body.number) {
-    return response.status(400).json({ 
+
+  if (!body.name || !body.number || body.name.trim().length === 0 || body.number.trim().length === 0) {
+    return response.status(400).json({
       error: 'name and / or number is missing' 
     })
   }
@@ -89,7 +101,6 @@ app.post('/api/persons', (request, response) => {
       error: 'number must be unique' 
     })
   }*/
-  
   const person = new Person({
     name: body.name,
     number: body.number
@@ -98,6 +109,7 @@ app.post('/api/persons', (request, response) => {
   person.save().then(savedPerson => {
     response.json(savedPerson)
   })
+  .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
@@ -119,15 +131,6 @@ app.put('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
-
-  if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } 
-
-  next(error)
-}
 
 app.use(errorHandler)
 
