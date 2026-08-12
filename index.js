@@ -30,13 +30,16 @@ app.get('/api/persons', (request, response, next) => {
 .catch(error => next(error))
 })
 
-/*
-app.get('/info', (request, response) => {
-    var length = persons.length
+
+app.get('/info', (request, response,next) => {
+  Person.find({}).then(result => {
+    let length = result.length
     var date = new Date()
     date[Symbol.toPrimitive]("string");
     response.send(`Phonebook has info for ${length} people <br><br>${date}`)
-})*/
+  })
+  .catch(error => next(error))
+})
 
 app.get('/api/persons/:id', (request, response, next) => {
 
