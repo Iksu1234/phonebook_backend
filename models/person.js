@@ -12,9 +12,32 @@ mongoose.connect(url, { family: 4 })
     console.log('error connecting to MongoDB:', error.message)
   })
 
+
+
+const numberValidator = (number) => {
+  let result = false
+  //check if number contains only numbers and that it only contains one hyphen at index 2 or 3
+  if (/^\d{2,3}-\d+$/.test(number)) {
+    result = true
+  }
+
+  return result
+}
+
+const customValidator = [numberValidator, 'Number can contain only numbers and must contain a hyphen after 2 or 3 numbers.']
+
 const personSchema = new mongoose.Schema({
-  name: String,
-  number: String
+  name: {
+    type: String,
+    minLength: 3,
+    required: true
+  },
+  number: {
+    type: String,
+    minLength: 8,
+    validate: customValidator,
+    required: true
+  }
 })
 
 personSchema.set('toJSON', {
